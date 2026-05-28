@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <memory>
 
 // ==========================================
@@ -12,39 +11,51 @@ private:
     int age_;
 
 public:
-    Person(std::string name, int age) : name_(name), age_(age) {
-        std::cout << "Person(" << name_ << ") criada.\n";
+    // Construtor com lista de inicialização
+    Person(std::string name, int age) : name_(name), age_(age) { 
+        std::cout << "Person criada.\n"; 
     }
-
-    ~Person() {
-        std::cout << "~Person(" << name_ << ") destruida.\n";
+    
+    // Destrutor com efeito observável
+    ~Person() { 
+        std::cout << "Person destruida.\n"; 
     }
-
+    
+    // Getter const
     std::string get_name() const { return name_; }
-
-    // Logica real: faz aniversario
-    void have_birthday() {
+    
+    // Lógica real: atualiza o estado (idade)
+    void celebrate_birthday() { 
         age_++;
+        std::cout << name_ << " agora tem " << age_ << " anos.\n";
     }
 };
 
 // ==========================================
-// Classe 2: Expense (Composta)
+// Classe 2: Bill (Composta)
 // ==========================================
-class Expense {
+class Bill {
 private:
     float value_;
 
 public:
-    Expense(float value) : value_(value) {
-        std::cout << "Expense(" << value_ << ") criada.\n";
+    Bill(float value) : value_(value) { 
+        std::cout << "Bill criada.\n"; 
     }
-
-    ~Expense() {
-        std::cout << "~Expense(" << value_ << ") destruida.\n";
+    
+    ~Bill() { 
+        std::cout << "Bill destruida.\n"; 
     }
-
+    
     float get_value() const { return value_; }
+    
+    // Lógica real: calcula e altera valor
+    void apply_discount(float discount) { 
+        if (discount > 0 && discount < value_) {
+            value_ -= discount; 
+            std::cout << "Desconto aplicado. Novo valor: R$" << value_ << "\n"; 
+        }
+    }
 };
 
 // ==========================================
@@ -52,24 +63,24 @@ public:
 // ==========================================
 class Task {
 private:
-    std::string name_;
-    std::shared_ptr<Person> person_; // Agregacao (observa o ponteiro)
-    bool done_;
+    std::shared_ptr<Person> person_; // Agregação: referência sem posse
+    bool is_done_;
 
 public:
-    Task(std::string name, std::shared_ptr<Person> person) 
-        : name_(name), person_(person), done_(false) {
-        std::cout << "Task(" << name_ << ") criada para " << person_->get_name() << ".\n";
+    Task(std::shared_ptr<Person> person) : person_(person), is_done_(false) { 
+        std::cout << "Task criada.\n"; 
     }
-
-    ~Task() {
-        std::cout << "~Task(" << name_ << ") destruida.\n";
+    
+    ~Task() { 
+        std::cout << "Task destruida.\n"; 
     }
-
-    // Logica real: conclui a tarefa
-    void complete() {
-        done_ = true;
-        std::cout << "Task " << name_ << " concluida!\n";
+    
+    // Lógica real: valida e atualiza estado
+    void complete_task() { 
+        if (!is_done_) {
+            is_done_ = true; 
+            std::cout << "Task completada por " << person_->get_name() << "!\n"; 
+        }
     }
 };
 
@@ -78,60 +89,50 @@ public:
 // ==========================================
 class Home {
 private:
-    std::vector<std::unique_ptr<Expense>> expenses_; // Composicao (dona)
-    std::vector<std::unique_ptr<Task>> tasks_;       // Composicao (dona)
+    std::unique_ptr<Bill> bill_; // Composição: posse exclusiva
+    std::unique_ptr<Task> task_; // Composição: posse exclusiva
 
 public:
-    Home() {
+    Home(float bill_val, std::shared_ptr<Person> person) 
+        : bill_(std::make_unique<Bill>(bill_val)), task_(std::make_unique<Task>(person)) {
         std::cout << "Home criada.\n";
     }
-
-    ~Home() {
-        std::cout << "~Home destruida.\n";
+    
+    ~Home() { 
+        std::cout << "Home destruida.\n"; 
     }
-
-    void add_expense(float value) {
-        expenses_.push_back(std::make_unique<Expense>(value));
-    }
-
-    void add_task(std::string name, std::shared_ptr<Person> person) {
-        tasks_.push_back(std::make_unique<Task>(name, person));
-    }
-
-    // Logica real: soma tudo
-    float get_total() const {
-        float total = 0.0f;
-        for (const auto& e : expenses_) {
-            total += e->get_value();
-        }
-        return total;
+    
+    // Lógica real: orquestra métodos das dependências
+    void process_home() { 
+        bill_->apply_discount(10.0f);
+        task_->complete_task();
     }
 };
 
 // ==========================================
-// Main: Testes do Roteiro
+// MAIN: Testes de Ciclo de Vida
 // ==========================================
 int main() {
-    // 1. Cria objeto independente para agregação
-    std::shared_ptr<Person> p1 = std::make_shared<Person>("Ana", 20);
-    p1->have_birthday(); 
-
-    // 2. Abre bloco para testar a vida util da Composição
-    std::cout << "\n[ENTRANDO NA CASA]\n";
-    {
-        Home my_home;
-        
-        my_home.add_expense(100.0f);
-        my_home.add_task("Lavar louca", p1);
-        
-        std::cout << "Soma de gastos: " << my_home.get_total() << "\n";
-        
-        std::cout << "\n[SAINDO DA CASA]\n";
-    } 
-    // my_home é destruída e puxa as Tasks e Expenses com ela
-
-    std::cout << "\n[FORA DO BLOCO]\n";
-    std::cout << p1->get_name() << " ainda existe perfeitamente!\n";
+    std::cout << "--- Inicio ---\n";
     
+    // 1. Cria a pessoa de forma independente (Agregação)
+    auto p1 = std::make_shared<Person>("Joao", 20);
+    p1->celebrate_birthday(); // Executa lógica
+    
+    std::cout << "\n[ENTRANDO NO BLOCO DA CASA]\n";
+    {
+        // 2. Casa criada (Composição de Bill e Task internamente)
+        Home my_home(100.0f, p1);
+        my_home.process_home(); // Executa lógica
+        
+        std::cout << "[SAINDO DO BLOCO DA CASA]\n";
+    } 
+    // 3. A casa foi destruída aqui, levando Bill e Task (unique_ptr) junto.
+    
+    std::cout << "\n[FORA DO BLOCO]\n";
+    // 4. A pessoa sobrevive, provando a agregação
+    std::cout << p1->get_name() << " ainda existe!\n";
+    
+    std::cout << "--- Fim ---\n";
     return 0;
 }
