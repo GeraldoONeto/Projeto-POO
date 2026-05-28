@@ -25,7 +25,6 @@ public:
     // Logica real: faz aniversario
     void have_birthday() {
         age_++;
-        std::cout << name_ << " fez aniversario! Idade: " << age_ << "\n";
     }
 };
 
@@ -46,12 +45,6 @@ public:
     }
 
     float get_value() const { return value_; }
-
-    // Logica real: aplica juros
-    void apply_tax(float tax) {
-        value_ += tax;
-        std::cout << "Juros aplicados. Novo valor: " << value_ << "\n";
-    }
 };
 
 // ==========================================
