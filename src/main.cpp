@@ -1,138 +1,65 @@
 #include <iostream>
-#include <string>
+#include <vector>
 #include <memory>
+#include "domain.hpp"
 
-// ==========================================
-// Classe 1: Person (Agregada)
-// ==========================================
-class Person {
-private:
-    std::string name_;
-    int age_;
-
-public:
-    // Construtor com lista de inicialização
-    Person(std::string name, int age) : name_(name), age_(age) { 
-        std::cout << "Person criada.\n"; 
-    }
-    
-    // Destrutor com efeito observável
-    ~Person() { 
-        std::cout << "Person destruida.\n"; 
-    }
-    
-    // Getter const
-    std::string get_name() const { return name_; }
-    
-    // Lógica real: atualiza o estado (idade)
-    void celebrate_birthday() { 
-        age_++;
-        std::cout << name_ << " agora tem " << age_ << " anos.\n";
-    }
-};
-
-// ==========================================
-// Classe 2: Bill (Composta)
-// ==========================================
-class Bill {
-private:
-    float value_;
-
-public:
-    Bill(float value) : value_(value) { 
-        std::cout << "Bill criada.\n"; 
-    }
-    
-    ~Bill() { 
-        std::cout << "Bill destruida.\n"; 
-    }
-    
-    float get_value() const { return value_; }
-    
-    // Lógica real: calcula e altera valor
-    void apply_discount(float discount) { 
-        if (discount > 0 && discount < value_) {
-            value_ -= discount; 
-            std::cout << "Desconto aplicado. Novo valor: R$" << value_ << "\n"; 
-        }
-    }
-};
-
-// ==========================================
-// Classe 3: Task (Composta, Agrega Person)
-// ==========================================
-class Task {
-private:
-    std::shared_ptr<Person> person_; // Agregação: referência sem posse
-    bool is_done_;
-
-public:
-    Task(std::shared_ptr<Person> person) : person_(person), is_done_(false) { 
-        std::cout << "Task criada.\n"; 
-    }
-    
-    ~Task() { 
-        std::cout << "Task destruida.\n"; 
-    }
-    
-    // Lógica real: valida e atualiza estado
-    void complete_task() { 
-        if (!is_done_) {
-            is_done_ = true; 
-            std::cout << "Task completada por " << person_->get_name() << "!\n"; 
-        }
-    }
-};
-
-// ==========================================
-// Classe 4: Home (Dona)
-// ==========================================
-class Home {
-private:
-    std::unique_ptr<Bill> bill_; // Composição: posse exclusiva
-    std::unique_ptr<Task> task_; // Composição: posse exclusiva
-
-public:
-    Home(float bill_val, std::shared_ptr<Person> person) 
-        : bill_(std::make_unique<Bill>(bill_val)), task_(std::make_unique<Task>(person)) {
-        std::cout << "Home criada.\n";
-    }
-    
-    ~Home() { 
-        std::cout << "Home destruida.\n"; 
-    }
-    
-    // Lógica real: orquestra métodos das dependências
-    void process_home() { 
-        bill_->apply_discount(10.0f);
-        task_->complete_task();
-    }
-};
-
-// ==========================================
-// MAIN: Testes de Ciclo de Vida
-// ==========================================
 int main() {
-    std::cout << "--- Inicio ---\n";
-    
-    // 1. Cria a pessoa de forma independente (Agregação)
-    auto p1 = std::make_shared<Person>("Joao", 20);
-    p1->celebrate_birthday(); // Executa lógica
-    
-    std::cout << "\n[ENTRANDO NO BLOCO DA CASA]\n";
+    std::cout << "--- Inicio do Trabalho Pratico 2 ---\n\n";
+
+    // ==========================================
+    // Questão 1 (C): Destrutor Virtual em Cadeia
+    // ==========================================
+    std::cout << "[Q1] Destrutor virtual:\n";
     {
-        // 2. Casa criada (Composição de Bill e Task internamente)
-        Home my_home(100.0f, p1);
-        my_home.process_home(); // Executa lógica
+        Bill* base_ptr = new WaterBill(50.0f, 15.0f);
+        delete base_ptr;
+    }
+    std::cout << "\n";
+
+    // ==========================================
+    // Questão 2 (A, B, C, D): Polimorfismo Dinâmico
+    // ==========================================
+    std::cout << "[Q2] Polimorfismo e Vetor de unique_ptr:\n";
+    {
+        std::vector<std::unique_ptr<Bill>> contas;
+        contas.push_back(std::make_unique<WaterBill>(40.0f, 10.0f));
+        contas.push_back(std::make_unique<EnergyBill>(80.0f, 15.0f));
         
-        std::cout << "[SAINDO DO BLOCO DA CASA]\n";
-    } 
-    // 3. A casa foi destruída aqui, levando Bill e Task (unique_ptr) junto.
+        for (const auto& conta : contas) {
+            conta->exibir();
+            std::cout << "  - Total Calculado: R$" << conta->calcular_total() << "\n";
+        }
+        
+        const Bill* maior = get_max_bill(contas);
+        if (maior) {
+            std::cout << "  - Maior valor: R$" << maior->calcular_total() << "\n";
+        }
+    }
+    std::cout << "\n";
+
+    // ==========================================
+    // Questão 3 (D): Interface Pura por Referência
+    // ==========================================
+    std::cout << "[Q3] Interface Pura (IPayable):\n";
+    {
+        WaterBill wb(100.0f, 30.0f);
+        pay_bill(wb);
+    }
+    std::cout << "\n";
     
-    std::cout << "\n[FORA DO BLOCO]\n";
-    // 4. A pessoa sobrevive, provando a agregação
-    std::cout << p1->get_name() << " ainda existe!\n";
+    // ==========================================
+    // Legado do TP1 (Composição / Agregação)
+    // ==========================================
+    std::cout << "[LEGADO] Classes basicas:\n";
+    {
+        auto pessoa = std::make_shared<Person>("Joao", 20);
+        pessoa->celebrate_birthday();
+        
+        auto conta = std::make_unique<WaterBill>(100.0f, 10.0f);
+        Home my_home(std::move(conta), pessoa);
+        my_home.process_home();
+    }
     
-    std::cout << "--- Fim ---\n";
+    std::cout << "\n--- Fim do Programa ---\n";
     return 0;
 }

@@ -11,52 +11,59 @@ Sistema de organização de uma residência, gerenciando membros da família, co
 
 ```mermaid
 classDiagram
-    class Residencia {
-        -string nome_
-        -vector~unique_ptr~Despesa~~ despesas_
-        -vector~unique_ptr~Tarefa~~ tarefas_
-        +Residencia(string nome)
-        +~Residencia()
-        +adicionar_despesa(string descricao, string categoria, float valor) void
-        +adicionar_tarefa(string descricao, int pontos, shared_ptr~MembroFamilia~ responsavel) void
-        +calcular_despesas_pendentes() const float
-        +exibir_relatorio() const void
+    class Home {
+        -unique_ptr~Bill~ bill_
+        -unique_ptr~Task~ task_
+        +Home(float bill_val, shared_ptr~Person~ person)
+        +process_home() void
     }
     
-    class MembroFamilia {
-        -string nome_
-        -int idade_
-        -int pontuacao_tarefas_
-        +MembroFamilia(string nome, int idade)
-        +~MembroFamilia()
-        +adicionar_pontos(int pontos) void
-        +obter_nome() const string
-        +obter_pontuacao() const int
+    class Person {
+        -string name_
+        -int age_
+        +celebrate_birthday() void
     }
     
-    class Despesa {
-        -string descricao_
-        -string categoria_
-        -float valor_
-        -bool esta_paga_
-        +Despesa(string descricao, string categoria, float valor)
-        +~Despesa()
-        +pagar_despesa() void
-        +obter_valor() const float
-        +esta_pendente() const bool
+    class Bill {
+        <<abstract>>
+        #float value_
+        +calcular_total() float*
+        +exibir() void
+        +apply_discount(float discount) void
     }
     
-    class Tarefa {
-        -string descricao_
-        -int recompensa_pontos_
-        -shared_ptr~MembroFamilia~ responsavel_
-        -bool esta_concluida_
-        +Tarefa(string descricao, int pontos, shared_ptr~MembroFamilia~ responsavel)
-        +~Tarefa()
-        +concluir_tarefa() void
+    class IPayable {
+        <<interface>>
+        +process_payment() void*
+    }
+    
+    class WaterBill {
+        -float taxa_esgoto_
+        +calcular_total() float
+        +exibir() void
+        +process_payment() void
+    }
+    
+    class EnergyBill {
+        -float taxa_iluminacao_
+        +calcular_total() float
+        +exibir() void
     }
 
-    Residencia *-- Despesa : compõe (dono)
-    Residencia *-- Tarefa : compõe (dono)
-    Tarefa o-- MembroFamilia : agrega (referência)
+    class Task {
+        -shared_ptr~Person~ person_
+        -bool is_done_
+        +complete_task() void
+    }
 
+    Home *-- Bill : compõe
+    Home *-- Task : compõe
+    Task o-- Person : agrega
+    Bill <|-- WaterBill : herda
+    Bill <|-- EnergyBill : herda
+    IPayable <|.. WaterBill : implementa
+```
+
+## Herança Avançada
+
+A classe `EnergyBill` foi marcada como `final` (no nível de classe) porque ela representa uma entidade de negócio completa e folha na nossa árvore de domínio. Essa garantia de design assegura que ninguém no futuro crie uma subclasse de `EnergyBill` para injetar comportamentos indesejados (como substituir a lógica do `calcular_total()` sem controle) ou adicionar taxas extras que fujam da estrutura rígida dessa conta. Isso previne bugs arquiteturais onde a lógica dessa folha poderia ser acidentalmente corrompida por polimorfismo excessivo.

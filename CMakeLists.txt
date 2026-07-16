@@ -14,5 +14,25 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_link_options(-fsanitize=address -fsanitize=undefined)
 endif()
 
-# Cria o executável exigido (meu_exe) apontando para o src/main.cpp
+# Cria o executável principal
 add_executable(meu_exe src/main.cpp)
+
+# ==========================================
+# TESTES (Questão 4) - Catch2
+# ==========================================
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.5.2
+)
+FetchContent_MakeAvailable(Catch2)
+
+# As classes foram implementadas de modo header-only (domain.hpp), portanto só precisamos do arquivo de teste
+add_executable(testes tests/test_tp2.cpp)
+target_include_directories(testes PRIVATE src)
+target_link_libraries(testes PRIVATE Catch2::Catch2WithMain)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(testes)
