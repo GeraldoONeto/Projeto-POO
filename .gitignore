@@ -67,3 +67,7 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Arquivos de estado gerados pela serializacao (Q4)
+estado*.json
+

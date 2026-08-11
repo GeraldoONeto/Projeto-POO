@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include "registry.hpp"
 
 // ==========================================
 // Interface Pura: IPayable (Q3)
@@ -18,20 +19,29 @@ public:
 // ==========================================
 // Classe 1: Person (Agregada)
 // ==========================================
-class Person {
+class Person : public counted<Person> {
 private:
+    int id_;
     std::string name_;
     int age_;
 
 public:
-    Person(std::string name, int age) : name_(name), age_(age) { std::cout << "Person criada.\n"; }
-    ~Person() { std::cout << "Person destruida.\n"; }
+    Person() : id_(0), name_(""), age_(0) {}
+    Person(int id, std::string name, int age) : id_(id), name_(std::move(name)), age_(age) {}
+    ~Person() = default;
     
+    int id() const { return id_; }
     std::string get_name() const { return name_; }
+    int get_age() const { return age_; }
     
     void celebrate_birthday() { 
         age_++;
         std::cout << name_ << " agora tem " << age_ << " anos.\n";
+    }
+
+    // Operador de igualdade para comparacao (necessario para testes)
+    bool operator==(const Person& other) const {
+        return id_ == other.id_ && name_ == other.name_ && age_ == other.age_;
     }
 };
 
@@ -43,8 +53,9 @@ protected:
     float value_;
 
 public:
-    Bill(float value) : value_(value) { std::cout << "Bill criada.\n"; }
-    virtual ~Bill() { std::cout << "~Bill()\n"; }
+    Bill() : value_(0.0f) {}
+    Bill(float value) : value_(value) {}
+    virtual ~Bill() = default;
     
     float get_value() const { return value_; }
     virtual float calcular_total() const = 0;
@@ -64,14 +75,13 @@ public:
 // ==========================================
 // Derivada Concreta 1: WaterBill (Q1, Q3)
 // ==========================================
-class WaterBill : public Bill, public IPayable {
+class WaterBill : public Bill, public IPayable, public counted<WaterBill> {
 private:
     float taxa_esgoto_;
 public:
-    WaterBill(float value, float taxa) : Bill(value), taxa_esgoto_(taxa) {
-        std::cout << "WaterBill criada.\n";
-    }
-    ~WaterBill() override { std::cout << "~WaterBill()\n"; }
+    WaterBill() : Bill(0.0f), taxa_esgoto_(0.0f) {}
+    WaterBill(float value, float taxa) : Bill(value), taxa_esgoto_(taxa) {}
+    ~WaterBill() override = default;
     
     float calcular_total() const override { return get_value() + taxa_esgoto_; }
     
@@ -92,10 +102,9 @@ class EnergyBill final : public Bill {
 private:
     float taxa_iluminacao_;
 public:
-    EnergyBill(float value, float taxa) : Bill(value), taxa_iluminacao_(taxa) {
-        std::cout << "EnergyBill criada.\n";
-    }
-    ~EnergyBill() override { std::cout << "~EnergyBill()\n"; }
+    EnergyBill() : Bill(0.0f), taxa_iluminacao_(0.0f) {}
+    EnergyBill(float value, float taxa) : Bill(value), taxa_iluminacao_(taxa) {}
+    ~EnergyBill() override = default;
     
     float calcular_total() const override { return get_value() + taxa_iluminacao_; }
     
@@ -113,8 +122,8 @@ private:
     bool is_done_;
 
 public:
-    Task(std::shared_ptr<Person> person) : person_(person), is_done_(false) { std::cout << "Task criada.\n"; }
-    ~Task() { std::cout << "Task destruida.\n"; }
+    Task(std::shared_ptr<Person> person) : person_(person), is_done_(false) {}
+    ~Task() = default;
     
     void complete_task() { 
         if (!is_done_) {
@@ -134,10 +143,8 @@ private:
 
 public:
     Home(std::unique_ptr<Bill> bill, std::shared_ptr<Person> person) 
-        : bill_(std::move(bill)), task_(std::make_unique<Task>(person)) {
-        std::cout << "Home criada.\n";
-    }
-    ~Home() { std::cout << "Home destruida.\n"; }
+        : bill_(std::move(bill)), task_(std::make_unique<Task>(person)) {}
+    ~Home() = default;
     
     void process_home() { 
         bill_->apply_discount(10.0f);

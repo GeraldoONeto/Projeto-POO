@@ -2,7 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <memory>
 #include <vector>
-#include "../src/domain.hpp"
+#include "domain.hpp"
 
 // ==========================================
 // TEST_CASE 1 (Q1): Construtores e destrutores
